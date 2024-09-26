@@ -1,0 +1,25 @@
+name: scgpt_yml
+channels:
+  - defaults
+  - pytorch
+  - nvidia
+dependencies:
+  - python=3.10.11
+  - pytorch=1.13.1
+  - torchvision=0.14.1
+  - torchaudio=0.13.1
+  - pytorch-cuda=11.7
+  - pip
+  - pip:
+      - packaging
+      - ipykernel
+      - pandas
+      - scanpy
+      - numpy==1.24.4
+      - torchtext==0.14.0
+      - scib
+      - datasets==2.14.5
+      - transformers==4.33.2
+      - cell-gears==0.0.1
+      - torch-geometric==2.5.3
+      - dcor==0.6
