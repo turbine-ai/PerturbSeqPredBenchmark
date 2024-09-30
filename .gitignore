@@ -141,7 +141,7 @@ dmypy.json
 *.npy
 events.out.tfevents.*
 tmp/
-data/
+data/*
 save/
 saved/
 output/
@@ -156,3 +156,4 @@ figures/
 
 # add  exception of data/go.csv
 !data/go.csv
+!data/replogle.zip
