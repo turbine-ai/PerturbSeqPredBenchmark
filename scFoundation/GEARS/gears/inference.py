@@ -1,11 +1,15 @@
 import torch
 import numpy as np
 import scanpy as sc
+import logging
 
 from sklearn.metrics import r2_score
 from scipy.stats import pearsonr, spearmanr
 from sklearn.metrics import mean_squared_error as mse
 from sklearn.metrics import mean_absolute_error as mae
+
+LOGGER = logging.getLogger(__name__)
+
 
 def evaluate(loader, model, uncertainty, device):
     """
@@ -23,7 +27,6 @@ def evaluate(loader, model, uncertainty, device):
     logvar = []
     
     for itr, batch in enumerate(loader):
-
         batch.to(device)
         pert_cat.extend(batch.pert)
 
