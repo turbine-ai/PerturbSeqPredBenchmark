@@ -595,6 +595,34 @@ def compute_perturbation_metrics(
     return metrics
 
 
+def prep_bulk_predict_artifacts(results: dict) -> dict[str, np.ndarray]:
+    """Persist bulked artifacts so later can be used for evaluation"""
+    # de artifacts are not used in eval (it is taken from adata attributes)
+    results_bulk = {k: v for k, v in results.items() if k not in ["pred_de", "truth_de"]}
+
+    conditions = np.unique(results_bulk["pert_cat"])
+    assert not "ctrl" in conditions, "ctrl should not be in test conditions"
+    condition2idx = {c: np.where(results_bulk["pert_cat"] == c)[0] for c in conditions}
+
+
+    true_perturbed = results_bulk["truth"]  # (n_cells, n_genes)
+    assert true_perturbed.max() <= 1000, "gene expression should be log transformed"
+    true_mean_perturbed_by_condition = np.array(
+        [true_perturbed[condition2idx[c]].mean(0) for c in conditions]
+    )
+
+    pred_perturbed = results_bulk["pred"]  # (n_cells, n_genes)
+    pred_mean_perturbed_by_condition = np.array(
+        [pred_perturbed[condition2idx[c]].mean(0) for c in conditions]
+    )  # (n_conditions, n_genes)
+    res_bulk = {
+        "pert_cat": conditions,
+        "pred": pred_mean_perturbed_by_condition,
+        "truth": true_mean_perturbed_by_condition,
+    }
+    return res_bulk
+
+
 # wrapper to make sure all methods are called only on the main process
 def main_process_only(func):
     @functools.wraps(func)
