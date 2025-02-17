@@ -5,6 +5,7 @@ from time import time
 import sys, os
 import pickle
 import logging
+from pathlib import Path
 
 import scanpy as sc
 import numpy as np
@@ -20,7 +21,14 @@ from .inference import evaluate, compute_metrics, deeper_analysis, \
 from .utils import loss_fct, uncertainty_loss_fct, parse_any_pert, \
                   get_similarity_network, print_sys, GeneSimNetwork, \
                   create_cell_graph_dataset_for_prediction, get_mean_control, \
-                  get_GI_genes_idx, get_GI_params
+                  get_GI_genes_idx, get_GI_params, \
+                  compute_perturbation_metrics, prep_bulk_predict_artifacts
+
+# # to import from scGPT dir
+# cur_dir = Path(__file__).resolve()
+# sys.path.append(str(cur_dir.parents[3]))
+
+# from scgpt.utils.util import compute_perturbation_metrics, prep_bulk_predict_artifacts, prep_bulk_predict_artifacts
 
 torch.manual_seed(0)
 
@@ -380,6 +388,7 @@ class GEARS:
         scheduler = StepLR(optimizer, step_size=1, gamma=0.5)
 
         min_val = np.inf
+        max_val = -np.inf
         # print_sys('Start Training...')
         
         cnt_train_batch = len(train_loader)
@@ -430,37 +439,47 @@ class GEARS:
 
                 epoch_step += 1
 
-                # if epoch_step == 10:
-                #     break
+                if epoch_step == 10:
+                    break
 
             start_time = time() 
-            LOGGER.info("Start evaluating...")
             scheduler.step()
-            # Evaluate model performance on train and val set
-            # dont calc train, takes too long
-            # train_res = evaluate(train_loader, self.model, self.config['uncertainty'], self.device)
-            # train_metrics, _ = compute_metrics(train_res)
 
+            LOGGER.info("Start evaluating...")
             val_res = evaluate(val_loader, self.model, self.config['uncertainty'], self.device)
-            LOGGER.info("Val res done")
-            # save dictionary of numpys to npz
-            LOGGER.info("Saving val res...")
+            val_metrics = compute_perturbation_metrics(
+                results=val_res,
+                ctrl_adata=self.ctrl_adata,
+            )
+            LOGGER.info(f"Validation metrics: {val_metrics}")
+            # bulk the results
+            val_res = prep_bulk_predict_artifacts(val_res)
             np.savez(f'{result_dir}/val_res_e{epoch}.npz', **val_res)
-
-            LOGGER.info("Start testing...")
-            test_res = evaluate(test_loader, self.model, self.config['uncertainty'], self.device)  
-            LOGGER.info("Test res done")
-            np.savez(f'{result_dir}/test_res_e{epoch}.npz', **test_res)
-            LOGGER.info("Saved test res")
-
-            # val_metrics, _ = compute_metrics(val_res)
 
             LOGGER.info("Evaluating time: {:.2f}s".format(time() - start_time))
 
+            if val_metrics['pearson_delta'] > max_val:
+                max_val = val_metrics['pearson_delta']
+                best_model = deepcopy(self.model)
+                self.best_model = best_model
+                self.save_model(result_dir)
+
+        # eval the best model on the test set
+        test_res = evaluate(test_loader, self.best_model, self.config['uncertainty'], self.device)
+        test_metrics = compute_perturbation_metrics(
+            results=test_res,
+            ctrl_adata=self.ctrl_adata,
+        )
+        LOGGER.info(f"Test metrics: {test_metrics}")
+        # bulk the results
+        test_res = prep_bulk_predict_artifacts(test_res)
+        np.savez(f'{result_dir}/test_res_best_model.npz', **test_res)
+
+
             # Print epoch performance
-            log = "Epoch {}: Train Overall MSE: {:.4f} " \
-                  "Validation Overall MSE: {:.4f}. "
-            # print_sys(log.format(epoch + 1, train_metrics['mse'], 
+            # log = "Epoch {}: Train Overall MSE: {:.4f} " \
+            #       "Validation Overall MSE: {:.4f}. "
+            # # print_sys(log.format(epoch + 1, train_metrics['mse'], 
             #                  val_metrics['mse']))
             # LOGGER.info(log.format(epoch + 1, train_metrics['mse'], val_metrics['mse']))
             # print all val_metrics
