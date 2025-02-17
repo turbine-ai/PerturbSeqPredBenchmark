@@ -157,3 +157,12 @@ figures/
 # add  exception of data/go.csv
 !data/go.csv
 !data/replogle.zip
+
+# scFoundation
+*.hkl
+*.tsv
+*.npz
+*.ipynb_checkpoints
+*.zip
+
+scFoundation/GEARS/artifacts/
