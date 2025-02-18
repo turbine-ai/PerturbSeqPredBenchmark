@@ -52,13 +52,8 @@ def main(args):
     # get dataloader with batch size
     pert_data.get_dataloader(batch_size = args.batch_size, test_batch_size = args.test_batch_size)
 
-    # write split to file
-    # from pathlib import Path
-    # _mydir = Path("/home/users/geroldcsendes/PertBench/scFoundation/GEARS/artifacts/adamson")
-    # _split = pert_data.set2conditions
-    # for k, v in _split.items():
-    #     with open(_mydir / f"{k}.txt", "w") as f:
-    #         f.write("\n".join(v))
+    train_sample = next(iter(pert_data.dataloader["train_loader"]))
+    LOGGER.info(f"train_sample: {train_sample}")
 
     # set up and train a model
     gears_model = GEARS(pert_data, device = args.device, weight_bias_track=args.weights_and_bias_track)
