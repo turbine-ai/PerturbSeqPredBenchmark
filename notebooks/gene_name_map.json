@@ -28,5 +28,18 @@
     "RARS": "RARS1",
     "CD3EAP": "POLR1G",
 
-    "RHOXF2BB": "RHOXF2"
+    "PHB": "PHB1",
+    "NARS": "NARS1",
+    "ATP5B": "ATP5F1B",
+
+    "RHOXF2BB": "RHOXF2",
+
+    "FAM102B": "EEIG2",
+    "C5orf30": "MACIR",
+    "CCDC130": "YJU2B",
+    "YARS": "YARS1",
+    "ZNF720": "KRBOX5",
+    "WARS": "WARS1",
+    "H2AFZ": "H2AZ1",
+    "C9orf16": "BBLN"
 }

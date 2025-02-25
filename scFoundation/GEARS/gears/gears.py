@@ -4,6 +4,7 @@ from multiprocessing.util import LOGGER_NAME
 from time import time
 import sys, os
 import pickle
+import json
 import logging
 from pathlib import Path
 
@@ -465,16 +466,20 @@ class GEARS:
                 self.save_model(result_dir)
 
         # eval the best model on the test set
+        LOGGER.info("Evaluating the best model on the test set...")
         test_res = evaluate(test_loader, self.best_model, self.config['uncertainty'], self.device)
         test_metrics = compute_perturbation_metrics(
             results=test_res,
             ctrl_adata=self.ctrl_adata,
         )
+        # turn test_metrics values to float
+        test_metrics = {k: float(v) for k, v in test_metrics.items()}
+        with open(f'{result_dir}/test_metrics.json', 'w') as f:
+            json.dump(test_metrics, f)
         LOGGER.info(f"Test metrics: {test_metrics}")
         # bulk the results
         test_res = prep_bulk_predict_artifacts(test_res)
         np.savez(f'{result_dir}/test_res_best_model.npz', **test_res)
-
 
             # Print epoch performance
             # log = "Epoch {}: Train Overall MSE: {:.4f} " \

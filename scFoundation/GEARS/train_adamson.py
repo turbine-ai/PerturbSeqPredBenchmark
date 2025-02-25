@@ -96,7 +96,7 @@ class RunArgs:
     singlecell_model_path: str | None = "../model/models/models.ckpt"
     workdir: str = "./"
     result_dir: str | None = None
-    weights_and_bias_track: bool = True
+    weights_and_bias_track: bool = False
 
 def setup_logging(file_path):
     logging.basicConfig(

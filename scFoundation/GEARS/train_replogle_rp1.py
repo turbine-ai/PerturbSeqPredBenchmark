@@ -34,23 +34,30 @@ def main(args):
 
     # get data
     pert_data = PertData(args.data_dir)
+    pert_data.load(data_path='data/replogle_rpe1_essential_raw')
+    pert_data.prepare_split(split = args.split, seed = args.seed, train_gene_set_size=args.train_gene_set_size)
+    pert_data.get_dataloader(batch_size = args.batch_size, test_batch_size = args.test_batch_size)
+
     # load dataset in paper: norman, adamson, dixit.
-    try:
-        if args.data_name in ['norman', 'adamson', 'dixit']:
-            pert_data.load(data_name = args.data_name)
-        else:
-            print('load data')
-            pert_data.load(data_path = pjoin(args.data_dir, args.data_name))
-    except:
-        adata = sc.read_h5ad(pjoin(args.data_dir, args.data_name+'.h5ad'))
-        adata.uns['log1p'] = {}
-        adata.uns['log1p']['base'] = None
-        pert_data.new_data_process(dataset_name=args.data_name, adata=adata)
+    # try:
+    #     if args.data_name in ['norman', 'adamson', 'dixit']:
+    #         pert_data.load(data_name = args.data_name)
+    #     else:
+    #         print('load data')
+    #         pert_data.load(data_path = pjoin(args.data_dir, args.data_name))
+    # except:
+    #     adata = sc.read_h5ad(pjoin(args.data_dir, args.data_name+'.h5ad'))
+    #     adata.uns['log1p'] = {}
+    #     adata.uns['log1p']['base'] = None
+    #     pert_data.new_data_process(dataset_name=args.data_name, adata=adata)
         
     # specify data split
-    pert_data.prepare_split(split = args.split, seed = args.seed, train_gene_set_size=args.train_gene_set_size)
+    # pert_data.prepare_split(split = args.split, seed = args.seed, train_gene_set_size=args.train_gene_set_size)
     # get dataloader with batch size
-    pert_data.get_dataloader(batch_size = args.batch_size, test_batch_size = args.test_batch_size)
+    # pert_data.get_dataloader(batch_size = args.batch_size, test_batch_size = args.test_batch_size)
+
+    train_sample = next(iter(pert_data.dataloader["train_loader"]))
+    LOGGER.info(f"train_sample: {train_sample}")
 
     # set up and train a model
     gears_model = GEARS(pert_data, device = args.device, weight_bias_track=args.weights_and_bias_track)
@@ -71,17 +78,18 @@ def main(args):
     param_pd = pd.DataFrame(vars(args), index=['params']).T
     param_pd.to_csv(f'{args.result_dir}/params.csv')
 
+
 @dataclass
 class RunArgs:
     device: str = "cuda"
-    data_dir: str = "./data/"
-    data_name: str =  "norman" # "gse90546_k562_63587_19264_10k_log1p"  # 
+    data_dir: str = "./data"
+    data_name: str = "replogle_rpe1_essential_raw" # "gse90546_k562_63587_19264_10k_log1p"  # 
     split: str = "simulation"
     seed: int = 1
     epochs: int = 10 #15
-    batch_size: int =  32 #6
-    accumulation_steps: int = 1 # 5
-    test_batch_size: int = 64
+    batch_size: int =  6 #6
+    accumulation_steps: int = 5 # 5
+    test_batch_size: int = 32
     hidden_size: int = 512
     train_gene_set_size: float = 0.75
     mode: str = "v1"
@@ -94,6 +102,7 @@ class RunArgs:
     workdir: str = "./"
     result_dir: str | None = None
     weights_and_bias_track: bool = False
+
 
 def setup_logging(file_path):
     logging.basicConfig(
@@ -109,6 +118,7 @@ def setup_logging(file_path):
         datefmt="%Y-%m-%d %H:%M:%S"
     ))
     logging.getLogger().addHandler(console_handler)
+
 
 if __name__ == "__main__":
 
