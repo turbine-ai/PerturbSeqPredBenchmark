@@ -87,9 +87,9 @@ class RunArgs:
     split: str = "simulation"
     seed: int = 1
     epochs: int = 10 #15
-    batch_size: int =  6 #6
-    accumulation_steps: int = 5 # 5
-    test_batch_size: int = 32
+    batch_size: int =  16 #6
+    accumulation_steps: int = 2 # 5
+    test_batch_size: int = 16
     hidden_size: int = 512
     train_gene_set_size: float = 0.75
     mode: str = "v1"

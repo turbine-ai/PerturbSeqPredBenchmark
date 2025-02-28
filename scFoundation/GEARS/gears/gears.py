@@ -440,8 +440,8 @@ class GEARS:
 
                 epoch_step += 1
 
-                if epoch_step == 10:
-                    break
+                # if epoch_step == 10:
+                #     break
 
             start_time = time() 
             scheduler.step()
