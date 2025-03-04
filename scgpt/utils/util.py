@@ -3,6 +3,7 @@ import json
 import logging
 import os
 from pathlib import Path
+from copy import deepcopy
 import random
 import subprocess
 from typing import Dict, List, Mapping, Optional, Tuple, Union
@@ -621,6 +622,36 @@ def prep_bulk_predict_artifacts(results: dict) -> dict[str, np.ndarray]:
         "truth": true_mean_perturbed_by_condition,
     }
     return res_bulk
+
+
+def filt_self_from_de(pert_data, is_norman: bool):
+
+    DE_COL = "rank_genes_groups_cov_all"  # top_non_dropout_de_20
+
+    gene_name_to_ensg = dict(zip(pert_data.adata.var["gene_name"], pert_data.adata.var.index))
+    rank_genes_groups_cov_all = deepcopy(pert_data.adata.uns[DE_COL])
+
+    updated_rank_genes_groups_cov_all = {}
+
+    for k, v in rank_genes_groups_cov_all.items():
+        condition = k.split("_")[1]
+        condition_gene_name = condition.replace("ctrl+", "").replace("+ctrl", "")
+
+        if is_norman:
+            condition_ensg_name = gene_name_to_ensg.get(condition_gene_name, None)
+            updated_rank_genes_groups_cov_all[k] = v[v != condition_ensg_name]
+        else:
+            if "+" in condition_gene_name:
+                condition_gene_name = condition_gene_name.split("+")
+                assert len(condition_gene_name) == 2
+                condition_ensg_name = [gene_name_to_ensg.get(g, None) for g in condition_gene_name]
+                mask = ~np.isin(v, condition_ensg_name)
+                updated_rank_genes_groups_cov_all[k] = v[mask]
+            else:
+                condition_ensg_name = gene_name_to_ensg.get(condition_gene_name, None)
+                updated_rank_genes_groups_cov_all[k] = v[v != condition_ensg_name]
+    
+    return updated_rank_genes_groups_cov_all
 
 
 # wrapper to make sure all methods are called only on the main process
