@@ -164,5 +164,6 @@ figures/
 *.npz
 *.ipynb_checkpoints
 *.zip
+*.ckpt
 
 scFoundation/GEARS/artifacts/
