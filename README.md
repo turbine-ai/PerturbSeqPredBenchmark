@@ -1,6 +1,6 @@
 # Benchmarking a foundational cell model for post-perturbation RNAseq prediction
 
-This is the official Github repository of the [Benchmarking a foundational cell model for post-perturbation RNAseq prediction](https://www.biorxiv.org/content/10.1101/2024.09.30.615843v1). This is a fork of the [scGPT](https://www.nature.com/articles/s41592-024-02201-0)  [repository](https://github.com/bowang-lab/scGPT).
+This is the official Github repository of the paper [Benchmarking a foundational cell model for post-perturbation RNAseq prediction](https://www.biorxiv.org/content/10.1101/2024.09.30.615843v1). This is a fork of the [scGPT](https://www.nature.com/articles/s41592-024-02201-0)  [repository](https://github.com/bowang-lab/scGPT).
 
 ## Repository content
 
