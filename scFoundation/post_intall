@@ -1,0 +1,4 @@
+pip install einops
+pip install omegaconf
+pip install local_attention
+pip install wandb

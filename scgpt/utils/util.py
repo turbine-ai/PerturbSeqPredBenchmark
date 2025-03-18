@@ -3,6 +3,7 @@ import json
 import logging
 import os
 from pathlib import Path
+from copy import deepcopy
 import random
 import subprocess
 from typing import Dict, List, Mapping, Optional, Tuple, Union
@@ -593,6 +594,64 @@ def compute_perturbation_metrics(
     metrics = metrics_across_genes
 
     return metrics
+
+
+def prep_bulk_predict_artifacts(results: dict) -> dict[str, np.ndarray]:
+    """Persist bulked artifacts so later can be used for evaluation"""
+    # de artifacts are not used in eval (it is taken from adata attributes)
+    results_bulk = {k: v for k, v in results.items() if k not in ["pred_de", "truth_de"]}
+
+    conditions = np.unique(results_bulk["pert_cat"])
+    assert not "ctrl" in conditions, "ctrl should not be in test conditions"
+    condition2idx = {c: np.where(results_bulk["pert_cat"] == c)[0] for c in conditions}
+
+
+    true_perturbed = results_bulk["truth"]  # (n_cells, n_genes)
+    assert true_perturbed.max() <= 1000, "gene expression should be log transformed"
+    true_mean_perturbed_by_condition = np.array(
+        [true_perturbed[condition2idx[c]].mean(0) for c in conditions]
+    )
+
+    pred_perturbed = results_bulk["pred"]  # (n_cells, n_genes)
+    pred_mean_perturbed_by_condition = np.array(
+        [pred_perturbed[condition2idx[c]].mean(0) for c in conditions]
+    )  # (n_conditions, n_genes)
+    res_bulk = {
+        "pert_cat": conditions,
+        "pred": pred_mean_perturbed_by_condition,
+        "truth": true_mean_perturbed_by_condition,
+    }
+    return res_bulk
+
+
+def filt_self_from_de(pert_data, is_norman: bool):
+
+    DE_COL = "rank_genes_groups_cov_all"  # top_non_dropout_de_20
+
+    gene_name_to_ensg = dict(zip(pert_data.adata.var["gene_name"], pert_data.adata.var.index))
+    rank_genes_groups_cov_all = deepcopy(pert_data.adata.uns[DE_COL])
+
+    updated_rank_genes_groups_cov_all = {}
+
+    for k, v in rank_genes_groups_cov_all.items():
+        condition = k.split("_")[1]
+        condition_gene_name = condition.replace("ctrl+", "").replace("+ctrl", "")
+
+        if is_norman:
+            condition_ensg_name = gene_name_to_ensg.get(condition_gene_name, None)
+            updated_rank_genes_groups_cov_all[k] = v[v != condition_ensg_name]
+        else:
+            if "+" in condition_gene_name:
+                condition_gene_name = condition_gene_name.split("+")
+                assert len(condition_gene_name) == 2
+                condition_ensg_name = [gene_name_to_ensg.get(g, None) for g in condition_gene_name]
+                mask = ~np.isin(v, condition_ensg_name)
+                updated_rank_genes_groups_cov_all[k] = v[mask]
+            else:
+                condition_ensg_name = gene_name_to_ensg.get(condition_gene_name, None)
+                updated_rank_genes_groups_cov_all[k] = v[v != condition_ensg_name]
+    
+    return updated_rank_genes_groups_cov_all
 
 
 # wrapper to make sure all methods are called only on the main process
